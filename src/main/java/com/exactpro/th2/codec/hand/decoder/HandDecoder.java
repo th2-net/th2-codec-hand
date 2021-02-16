@@ -33,7 +33,9 @@ public class HandDecoder {
                     messageGroupBuilder.addMessages(AnyMessage.newBuilder().setMessage(el).build());
                 }
 
-                messageGroupBuilder.addMessages(AnyMessage.newBuilder().setRawMessage(output.getSecond()).build());
+                if (output.getSecond() != null) {
+                    messageGroupBuilder.addMessages(AnyMessage.newBuilder().setRawMessage(output.getSecond()).build());
+                }
             } catch (Exception e) {
                 log.error("Exception decoding message", e);
 

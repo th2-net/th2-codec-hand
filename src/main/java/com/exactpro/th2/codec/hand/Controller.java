@@ -15,7 +15,7 @@ package com.exactpro.th2.codec.hand;
 
 import com.exactpro.th2.codec.hand.decoder.HandDecoder;
 import com.exactpro.th2.codec.hand.listener.MessageGroupBatchListener;
-import com.exactpro.th2.codec.hand.processor.FixProcessorConfiguration;
+import com.exactpro.th2.codec.hand.processor.HandProcessorConfiguration;
 import com.exactpro.th2.codec.hand.processor.HandProcessor;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -53,8 +53,8 @@ public class Controller {
             configureShutdownHook(lock, condition);
             setReadiness(true);
 
-            FixProcessorConfiguration fixProcessorConfiguration = factory.getCustomConfiguration(FixProcessorConfiguration.class);
-            HandProcessor handProcessor = new HandProcessor(fixProcessorConfiguration);
+            HandProcessorConfiguration handProcessorConfiguration = factory.getCustomConfiguration(HandProcessorConfiguration.class);
+            HandProcessor handProcessor = new HandProcessor(handProcessorConfiguration);
 
             HandDecoder handDecoder = new HandDecoder(handProcessor);
             MessageGroupBatchListener messageGroupBatchListener = new MessageGroupBatchListener(parsedBatchRouter, handDecoder);

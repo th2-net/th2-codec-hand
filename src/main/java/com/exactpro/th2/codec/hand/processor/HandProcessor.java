@@ -30,9 +30,9 @@ import java.util.List;
 
 @Slf4j
 public class HandProcessor {
-    private final FixProcessorConfiguration configuration;
+    private final HandProcessorConfiguration configuration;
 
-    public HandProcessor(FixProcessorConfiguration configuration) {
+    public HandProcessor(HandProcessorConfiguration configuration) {
         this.configuration = configuration;
 
     }
@@ -72,7 +72,7 @@ public class HandProcessor {
                                     .setConnectionId(rawMessage.getMetadata().getId().getConnectionId())
                                     .setDirection(rawMessage.getMetadata().getId().getDirection())
                                     .setSequence(rawMessage.getMetadata().getId().getSequence())
-                                    .setSubsequence(0, subsequenceNumber)
+                                    .addSubsequence(subsequenceNumber)
                                     .build())
                             .setTimestamp(rawMessage.getMetadata().getTimestamp())
                             .putAllProperties(rawMessage.getMetadata().getPropertiesMap())

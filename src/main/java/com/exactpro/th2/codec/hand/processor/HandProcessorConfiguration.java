@@ -23,12 +23,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class FixProcessorConfiguration implements Configuration {
-    private String messageTypeElClassName = "table-header";
-    private String contentKey = "Text out";
-    private int hierarchyStart = 10;
-    private  int hierarchyStep = 10;
-    private  String hierarchyAttribute = "style";
-    private  String hierarchyIndicatorPrefix = "padding-left: ";
-    private  String hierarchyIndicatorSuffix = "px";
+public class HandProcessorConfiguration implements Configuration {
+    private String contentKey = "TextOut";
+
 }
