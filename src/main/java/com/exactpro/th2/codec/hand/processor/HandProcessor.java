@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /*
     Following class does RawMessage processing
@@ -36,58 +37,82 @@ public class HandProcessor {
         this.configuration = configuration;
 
     }
+    
+    private MessageID.Builder getMessageIdBuilder(RawMessage rawMessage) {
+        return rawMessage.getMetadata().getId().toBuilder();
+    }
 
-    public List<GeneratedMessageV3> process (RawMessage rawMessage, Integer subsequenceNumber) throws Exception {
-        List<GeneratedMessageV3> messages = new ArrayList<>();
+    private MessageMetadata.Builder getMetaDataBuilder(RawMessage rawMessage) {
+        RawMessageMetadata metadata = rawMessage.getMetadata();
+        return MessageMetadata.newBuilder().setId(metadata.getId()).setTimestamp(metadata.getTimestamp())
+                .putAllProperties(metadata.getPropertiesMap()).setProtocol(metadata.getProtocol());
+    }
+
+    private RawMessageMetadata.Builder getRawMetaDataBuilder(RawMessage rawMessage) {
+        return rawMessage.getMetadata().toBuilder();
+    }
+
+    public List<AnyMessage> process (RawMessage rawMessage, Integer subsequenceNumber) throws Exception {
+        List<AnyMessage> messages = new ArrayList<>();
 
         ObjectMapper objectMapper;
 
         objectMapper = new ObjectMapper();
         String body = new String(rawMessage.getBody().toByteArray());
+        Map<?, ?> jsonMap = objectMapper.readValue(body, HashMap.class);
 
-
-
-        HashMap<String, String> jsonMap = objectMapper.readValue(body, HashMap.class);
+        MessageID.Builder messageIdBuilder = this.getMessageIdBuilder(rawMessage);
+        RawMessageMetadata.Builder rawMetaDataBuilder = this.getRawMetaDataBuilder(rawMessage);
+        MessageMetadata.Builder metaDataBuilder = this.getMetaDataBuilder(rawMessage);
 
         for (var entry : jsonMap.entrySet()) {
-            GeneratedMessageV3 msg;
+            AnyMessage.Builder anyMsgBuilder = AnyMessage.newBuilder();
             if (entry.getKey().equals(configuration.getContentKey())) {
-                msg  = RawMessage.newBuilder()
-                        .setMetadata(RawMessageMetadata.newBuilder()
-                                .setId(MessageID.newBuilder()
-                                        .setConnectionId(rawMessage.getMetadata().getId().getConnectionId())
-                                        .setDirection(rawMessage.getMetadata().getId().getDirection())
-                                        .setSequence(rawMessage.getMetadata().getId().getSequence())
-                                        .addSubsequence(subsequenceNumber)
-                                        .build())
-                                .setTimestamp(rawMessage.getMetadata().getTimestamp())
-                                .putAllProperties(rawMessage.getMetadata().getPropertiesMap())
-                                .setProtocol(rawMessage.getMetadata().getProtocol())
-                                .build())
-                        .setBody(ByteString.copyFrom(entry.getValue().getBytes()))
-                        .build();
-            } else {
-                msg = Message.newBuilder()
-                        .setMetadata(MessageMetadata.newBuilder()
-                                .setId(MessageID.newBuilder()
-                                        .setConnectionId(rawMessage.getMetadata().getId().getConnectionId())
-                                        .setDirection(rawMessage.getMetadata().getId().getDirection())
-                                        .setSequence(rawMessage.getMetadata().getId().getSequence())
-                                        .addSubsequence(subsequenceNumber)
-                                        .build())
-                                .setTimestamp(rawMessage.getMetadata().getTimestamp())
-                                .putAllProperties(rawMessage.getMetadata().getPropertiesMap())
-                                .setProtocol(rawMessage.getMetadata().getProtocol())
-                                .build())
-                        .putFields(entry.getKey(), Value.newBuilder().setSimpleValue(entry.getValue()).build())
-                        .build();
-            }
-            messages.add(msg);
+                RawMessageMetadata rawMsgMetaData = rawMetaDataBuilder.setId(messageIdBuilder.clearSubsequence()
+                        .addSubsequence(subsequenceNumber)).build();
 
+                Object value = entry.getValue();
+                if (!(value instanceof String)) {
+                    log.error("Expected value for " + entry.getKey() + " is string but received: " +
+                            (value == null ? "null" : value.getClass().toString()));
+                    continue;
+                }
+
+                anyMsgBuilder.setRawMessage(RawMessage.newBuilder().setMetadata(rawMsgMetaData)
+                        .setBody(ByteString.copyFrom(((String) value).getBytes())));
+            } else {
+                MessageMetadata msgmetaData = metaDataBuilder.setId(messageIdBuilder.clearSubsequence()
+                        .addSubsequence(subsequenceNumber)).build();
+                
+                String key = String.valueOf(entry.getKey());
+                Value value = this.convertToValue(entry.getValue());
+                
+                anyMsgBuilder.setMessage(Message.newBuilder().setMetadata(msgmetaData).putFields(key, value));
+            }
+            
+            messages.add(anyMsgBuilder.build());
             subsequenceNumber ++;
         }
 
         return messages;
+    }
+    
+    private Value convertToValue (Object value) {
+        if (value instanceof List) {
+            ListValue.Builder listValueBuilder = ListValue.newBuilder();
+            for (var o : ((List<?>) value)) {
+                listValueBuilder.addValues(this.convertToValue(o));
+            }
+            return Value.newBuilder().setListValue(listValueBuilder).build();
+        } else if (value instanceof Map) {
+            Message.Builder msgBuilder = Message.newBuilder();
+            for (var o1 : ((Map<?, ?>) value).entrySet()) {
+                msgBuilder.putFields(String.valueOf(o1.getKey()), convertToValue(o1.getValue()));
+            }
+            return Value.newBuilder().setMessageValue(msgBuilder).build();
+        } else {
+            return Value.newBuilder().setSimpleValue(String.valueOf(value)).build();
+        }
     }
 }
 
