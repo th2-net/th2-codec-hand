@@ -13,10 +13,10 @@
 
 package com.exactpro.th2.codec.hand.processor;
 
-import com.exactpro.sf.common.util.Pair;
 import com.exactpro.th2.common.grpc.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.GeneratedMessageV3;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
@@ -37,9 +37,8 @@ public class HandProcessor {
 
     }
 
-    public Pair <List<Message>, RawMessage> process (RawMessage rawMessage) throws Exception {
-        List <Message> messages = new ArrayList<>();
-        RawMessage outputRawMessage = null;
+    public List<GeneratedMessageV3> process (RawMessage rawMessage, Integer subsequenceNumber) throws Exception {
+        List<GeneratedMessageV3> messages = new ArrayList<>();
 
         ObjectMapper objectMapper;
 
@@ -50,43 +49,45 @@ public class HandProcessor {
 
         HashMap<String, String> jsonMap = objectMapper.readValue(body, HashMap.class);
 
-        int subsequenceNumber = 1;
         for (var entry : jsonMap.entrySet()) {
+            GeneratedMessageV3 msg;
             if (entry.getKey().equals(configuration.getContentKey())) {
-                outputRawMessage = RawMessage.newBuilder()
+                msg  = RawMessage.newBuilder()
                         .setMetadata(RawMessageMetadata.newBuilder()
-                                .setId(rawMessage.getMetadata().getId())
+                                .setId(MessageID.newBuilder()
+                                        .setConnectionId(rawMessage.getMetadata().getId().getConnectionId())
+                                        .setDirection(rawMessage.getMetadata().getId().getDirection())
+                                        .setSequence(rawMessage.getMetadata().getId().getSequence())
+                                        .addSubsequence(subsequenceNumber)
+                                        .build())
                                 .setTimestamp(rawMessage.getMetadata().getTimestamp())
                                 .putAllProperties(rawMessage.getMetadata().getPropertiesMap())
                                 .setProtocol(rawMessage.getMetadata().getProtocol())
                                 .build())
                         .setBody(ByteString.copyFrom(entry.getValue().getBytes()))
                         .build();
-
-                continue;
+            } else {
+                msg = Message.newBuilder()
+                        .setMetadata(MessageMetadata.newBuilder()
+                                .setId(MessageID.newBuilder()
+                                        .setConnectionId(rawMessage.getMetadata().getId().getConnectionId())
+                                        .setDirection(rawMessage.getMetadata().getId().getDirection())
+                                        .setSequence(rawMessage.getMetadata().getId().getSequence())
+                                        .addSubsequence(subsequenceNumber)
+                                        .build())
+                                .setTimestamp(rawMessage.getMetadata().getTimestamp())
+                                .putAllProperties(rawMessage.getMetadata().getPropertiesMap())
+                                .setProtocol(rawMessage.getMetadata().getProtocol())
+                                .build())
+                        .putFields(entry.getKey(), Value.newBuilder().setSimpleValue(entry.getValue()).build())
+                        .build();
             }
-
-            var msg = Message.newBuilder()
-                    .setMetadata(MessageMetadata.newBuilder()
-                            .setId(MessageID.newBuilder()
-                                    .setConnectionId(rawMessage.getMetadata().getId().getConnectionId())
-                                    .setDirection(rawMessage.getMetadata().getId().getDirection())
-                                    .setSequence(rawMessage.getMetadata().getId().getSequence())
-                                    .addSubsequence(subsequenceNumber)
-                                    .build())
-                            .setTimestamp(rawMessage.getMetadata().getTimestamp())
-                            .putAllProperties(rawMessage.getMetadata().getPropertiesMap())
-                            .setProtocol(rawMessage.getMetadata().getProtocol())
-                            .build())
-                    .putFields(entry.getKey(), Value.newBuilder().setSimpleValue(entry.getValue()).build())
-                    .build();
-
             messages.add(msg);
 
             subsequenceNumber ++;
         }
 
-        return new Pair<>(messages, outputRawMessage);
+        return messages;
     }
 }
 
