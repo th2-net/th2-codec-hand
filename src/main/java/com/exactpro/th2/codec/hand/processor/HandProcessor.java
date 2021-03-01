@@ -73,7 +73,7 @@ public class HandProcessor {
 
                 Object value = entry.getValue();
                 if (!(value instanceof String)) {
-                    log.error("Expected value for " + entry.getKey() + " is string but received: " +
+                    log.error("Expected value for {} is string but received: {}", entry.getKey(),
                             (value == null ? "null" : value.getClass().toString()));
                     continue;
                 }
@@ -104,15 +104,17 @@ public class HandProcessor {
                 listValueBuilder.addValues(this.convertToValue(o));
             }
             return Value.newBuilder().setListValue(listValueBuilder).build();
-        } else if (value instanceof Map) {
+        }
+        
+        if (value instanceof Map) {
             Message.Builder msgBuilder = Message.newBuilder();
             for (var o1 : ((Map<?, ?>) value).entrySet()) {
                 msgBuilder.putFields(String.valueOf(o1.getKey()), convertToValue(o1.getValue()));
             }
             return Value.newBuilder().setMessageValue(msgBuilder).build();
-        } else {
-            return Value.newBuilder().setSimpleValue(String.valueOf(value)).build();
         }
+        
+        return Value.newBuilder().setSimpleValue(String.valueOf(value)).build();
     }
 }
 
