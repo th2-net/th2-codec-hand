@@ -2,10 +2,10 @@ package com.exactpro.th2.codec.hand.decoder;
 
 import com.exactpro.th2.codec.hand.processor.HandProcessor;
 import com.exactpro.th2.common.grpc.AnyMessage;
-import com.exactpro.th2.common.grpc.Message;
 import com.exactpro.th2.common.grpc.MessageGroup;
-import com.exactpro.th2.common.grpc.RawMessage;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 @Slf4j
 public class HandDecoder {
@@ -26,18 +26,11 @@ public class HandDecoder {
                     messageGroupBuilder.addMessages(AnyMessage.newBuilder().setMessage(msg.getMessage()).build());
                     continue;
                 }
-                var output = handProcessor.process(msg.getRawMessage(), subsequenceNumber);
-
-                for (var el : output) {
-                    if (el instanceof Message) {
-                        messageGroupBuilder.addMessages(AnyMessage.newBuilder().setMessage((Message) el).build());
-                    } else {
-                        messageGroupBuilder.addMessages(AnyMessage.newBuilder().setRawMessage((RawMessage) el).build());
-                    }
-                }
+                
+                List<AnyMessage> output = handProcessor.process(msg.getRawMessage(), subsequenceNumber);
+                output.forEach(messageGroupBuilder::addMessages);
             } catch (Exception e) {
                 log.error("Exception decoding message", e);
-
                 return null;
             }
         }
