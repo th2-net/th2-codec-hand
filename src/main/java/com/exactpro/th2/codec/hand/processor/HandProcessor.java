@@ -31,6 +31,7 @@ import java.util.Map;
 
 @Slf4j
 public class HandProcessor {
+    public static final String DEFAULT_MESSAGE_TYPE = "th2-hand";
     private final HandProcessorConfiguration configuration;
 
     public HandProcessor(HandProcessorConfiguration configuration) {
@@ -82,7 +83,7 @@ public class HandProcessor {
                         .setBody(ByteString.copyFrom(((String) value).getBytes())));
             } else {
                 MessageMetadata msgmetaData = metaDataBuilder.setId(messageIdBuilder.clearSubsequence()
-                        .addSubsequence(subsequenceNumber)).build();
+                        .addSubsequence(subsequenceNumber)).setMessageType(DEFAULT_MESSAGE_TYPE).build();
                 
                 String key = String.valueOf(entry.getKey());
                 Value value = this.convertToValue(entry.getValue());
