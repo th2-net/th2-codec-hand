@@ -34,7 +34,7 @@ repositories {
 dependencies {
     api platform('com.exactpro.th2:bom:2.10.1')
 
-    compile 'com.exactpro.th2:common:3.0.2'
+    compile 'com.exactpro.th2:common:3.13.1'
     compile "com.exactpro.sf:sailfish-common:3.2"
 
 
