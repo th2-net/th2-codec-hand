@@ -12,7 +12,7 @@
  */
 package com.exactpro.th2.codec.hand.processor;
 
-import com.exactpro.th2.common.schema.message.configuration.Configuration;
+import com.exactpro.th2.common.schema.configuration.Configuration;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,7 +23,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class HandProcessorConfiguration implements Configuration {
+public class HandProcessorConfiguration extends Configuration {
     private String contentKey = "TextOut";
 
 }

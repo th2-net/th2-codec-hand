@@ -25,6 +25,14 @@ repositories {
         name 'Bintray'
         url 'https://dl.bintray.com/exactpro/th2'
     }
+    maven {
+        name 'Sonatype_snapshots'
+        url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+    }
+    maven {
+        name 'Sonatype_releases'
+        url 'https://s01.oss.sonatype.org/content/repositories/releases/'
+    }
     flatDir {
         dirs "lib"
     }
@@ -65,4 +73,8 @@ jar {
     }
 
     version = null
+}
+
+application {
+    mainClassName 'com.exactpro.th2.codec.hand.Controller'
 }

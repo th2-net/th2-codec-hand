@@ -2,6 +2,11 @@
 
 ## Release notes
 
+### 0.1.1
+
++ fix Configuration class reference
++ add mainClassName property
+
 ### 0.1.0
 
 + reads dictionaries from the /var/th2/config/dictionary folder
