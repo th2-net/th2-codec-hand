@@ -1,5 +1,5 @@
 /*
- Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -16,8 +16,8 @@ package com.exactpro.th2.codec.hand.processor;
 import com.exactpro.th2.common.grpc.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.GeneratedMessageV3;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,35 +53,54 @@ public class HandProcessor {
         return rawMessage.getMetadata().toBuilder();
     }
 
-    public List<AnyMessage> process (RawMessage rawMessage, Integer subsequenceNumber) throws Exception {
-        List<AnyMessage> messages = new ArrayList<>();
-
-        ObjectMapper objectMapper;
-
-        objectMapper = new ObjectMapper();
-        String body = new String(rawMessage.getBody().toByteArray());
-        Map<?, ?> jsonMap = objectMapper.readValue(body, HashMap.class);
+    public List<AnyMessage> process(RawMessage rawMessage, Integer subsequenceNumber) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<?, ?> jsonMap = objectMapper.readValue(rawMessage.getBody().toByteArray(), HashMap.class);
 
         MessageID.Builder messageIdBuilder = this.getMessageIdBuilder(rawMessage);
         RawMessageMetadata.Builder rawMetaDataBuilder = this.getRawMetaDataBuilder(rawMessage);
         MessageMetadata.Builder metaDataBuilder = this.getMetaDataBuilder(rawMessage);
 
+        List<AnyMessage> messages = new ArrayList<>(jsonMap.size());
         for (var entry : jsonMap.entrySet()) {
-            AnyMessage.Builder anyMsgBuilder = AnyMessage.newBuilder();
             if (entry.getKey().equals(configuration.getContentKey())) {
-                RawMessageMetadata rawMsgMetaData = rawMetaDataBuilder.setId(messageIdBuilder.clearSubsequence()
-                        .addSubsequence(subsequenceNumber)).build();
-
                 Object value = entry.getValue();
-                if (!(value instanceof String)) {
-                    log.error("Expected value for {} is string but received: {}", entry.getKey(),
+                if (!(value instanceof List)) {
+                    log.error("Expected value for {} is list but received: {}", entry.getKey(),
                             (value == null ? "null" : value.getClass().toString()));
                     continue;
                 }
 
-                anyMsgBuilder.setRawMessage(RawMessage.newBuilder().setMetadata(rawMsgMetaData)
-                        .setBody(ByteString.copyFrom(((String) value).getBytes())));
+                List<?> iterableValues = (List<?>) value;
+                if (iterableValues.isEmpty())
+                    continue;
+
+                List<AnyMessage> parsedMessages = new ArrayList<>(iterableValues.size());
+                for (Object iterableValue : iterableValues) {
+                    if (!(iterableValue instanceof Map)) {
+                        log.error("Expected type of {} is map but received: {}", iterableValue,
+                                iterableValue.getClass().toString());
+                        continue;
+                    }
+                    String data = (String)((Map<?, ?>) iterableValue).get(configuration.getResultKey());
+                    if (StringUtils.isEmpty(data))
+                        continue;
+
+                    AnyMessage.Builder anyMsgBuilder = AnyMessage.newBuilder();
+                    RawMessageMetadata rawMsgMetaData = rawMetaDataBuilder
+                            .setId(messageIdBuilder.clearSubsequence().addSubsequence(subsequenceNumber))
+                            .build();
+                    RawMessage.Builder builderForValue = RawMessage.newBuilder()
+                            .setMetadata(rawMsgMetaData)
+                            .setBody(ByteString.copyFromUtf8(data));
+                    anyMsgBuilder.setRawMessage(builderForValue);
+                    parsedMessages.add(anyMsgBuilder.build());
+                    subsequenceNumber ++;
+                }
+                messages.addAll(parsedMessages);
             } else {
+                AnyMessage.Builder anyMsgBuilder = AnyMessage.newBuilder();
+
                 MessageMetadata msgmetaData = metaDataBuilder.setId(messageIdBuilder.clearSubsequence()
                         .addSubsequence(subsequenceNumber)).setMessageType(DEFAULT_MESSAGE_TYPE).build();
                 
@@ -89,10 +108,9 @@ public class HandProcessor {
                 Value value = this.convertToValue(entry.getValue());
                 
                 anyMsgBuilder.setMessage(Message.newBuilder().setMetadata(msgmetaData).putFields(key, value));
+                messages.add(anyMsgBuilder.build());
+                subsequenceNumber++;
             }
-            
-            messages.add(anyMsgBuilder.build());
-            subsequenceNumber ++;
         }
 
         return messages;

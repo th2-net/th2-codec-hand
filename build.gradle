@@ -1,5 +1,5 @@
 /*
- Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -20,11 +20,7 @@ group = 'com.exactpro.th2'
 version = release_version
 
 repositories {
-    jcenter()
-    maven {
-        name 'Bintray'
-        url 'https://dl.bintray.com/exactpro/th2'
-    }
+    mavenCentral()
     maven {
         name 'Sonatype_snapshots'
         url 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
@@ -40,10 +36,10 @@ repositories {
 }
 
 dependencies {
-    api platform('com.exactpro.th2:bom:2.10.1')
+    api platform('com.exactpro.th2:bom:3.0.0')
 
-    compile 'com.exactpro.th2:common:3.13.1'
-    compile "com.exactpro.sf:sailfish-common:3.2"
+    compile 'com.exactpro.th2:common:3.13.4'
+    compile "com.exactpro.sf:sailfish-common:3.2.1603"
 
 
     compile "org.slf4j:slf4j-log4j12"

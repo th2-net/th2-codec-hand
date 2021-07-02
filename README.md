@@ -2,6 +2,10 @@
 
 ## Release notes
 
+### 0.1.2
+
++ updated format of action results
+
 ### 0.1.1
 
 + fix Configuration class reference
