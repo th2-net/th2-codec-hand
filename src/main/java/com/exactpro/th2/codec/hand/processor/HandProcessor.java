@@ -75,41 +75,44 @@ public class HandProcessor {
                 if (iterableValues.isEmpty())
                     continue;
 
-                List<AnyMessage> parsedMessages = new ArrayList<>(iterableValues.size());
                 for (Object iterableValue : iterableValues) {
                     if (!(iterableValue instanceof Map)) {
                         log.error("Expected type of {} is map but received: {}", iterableValue,
                                 iterableValue.getClass().toString());
                         continue;
                     }
-                    String data = (String)((Map<?, ?>) iterableValue).get(configuration.getResultKey());
-                    if (StringUtils.isEmpty(data))
+
+                    Object rawData = ((Map<?, ?>) iterableValue).get(configuration.getResultKey());
+                    if (!(rawData instanceof String)) {
+                        log.error("Expected type of {} is string but received: {}", rawData,
+                                rawData.getClass().toString());
+                        continue;
+                    }
+                    String dataAsString = (String) rawData;
+                    if (StringUtils.isEmpty(dataAsString))
                         continue;
 
                     AnyMessage.Builder anyMsgBuilder = AnyMessage.newBuilder();
                     RawMessageMetadata rawMsgMetaData = rawMetaDataBuilder
-                            .setId(messageIdBuilder.clearSubsequence().addSubsequence(subsequenceNumber))
+                            .setId(messageIdBuilder.clearSubsequence().addSubsequence(subsequenceNumber++))
                             .build();
                     RawMessage.Builder builderForValue = RawMessage.newBuilder()
                             .setMetadata(rawMsgMetaData)
-                            .setBody(ByteString.copyFromUtf8(data));
+                            .setBody(ByteString.copyFromUtf8(dataAsString));
                     anyMsgBuilder.setRawMessage(builderForValue);
-                    parsedMessages.add(anyMsgBuilder.build());
-                    subsequenceNumber ++;
+                    messages.add(anyMsgBuilder.build());
                 }
-                messages.addAll(parsedMessages);
             } else {
                 AnyMessage.Builder anyMsgBuilder = AnyMessage.newBuilder();
 
                 MessageMetadata msgmetaData = metaDataBuilder.setId(messageIdBuilder.clearSubsequence()
-                        .addSubsequence(subsequenceNumber)).setMessageType(DEFAULT_MESSAGE_TYPE).build();
+                        .addSubsequence(subsequenceNumber++)).setMessageType(DEFAULT_MESSAGE_TYPE).build();
                 
                 String key = String.valueOf(entry.getKey());
                 Value value = this.convertToValue(entry.getValue());
                 
                 anyMsgBuilder.setMessage(Message.newBuilder().setMetadata(msgmetaData).putFields(key, value));
                 messages.add(anyMsgBuilder.build());
-                subsequenceNumber++;
             }
         }
 
