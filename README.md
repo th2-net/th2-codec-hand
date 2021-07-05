@@ -5,6 +5,7 @@
 ### 0.1.3
 
 + fixed reading of raw messages
++ updated github workflow
 
 ### 0.1.2
 
