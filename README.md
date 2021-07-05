@@ -1,6 +1,11 @@
-# th2 codec hand (0.1.0)
+# th2 codec hand (0.1.3)
 
 ## Release notes
+
+### 0.1.3
+
++ fixed reading of raw messages
++ updated github workflow
 
 ### 0.1.2
 

@@ -55,7 +55,8 @@ public class HandProcessor {
 
     public List<AnyMessage> process(RawMessage rawMessage, Integer subsequenceNumber) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
-        Map<?, ?> jsonMap = objectMapper.readValue(rawMessage.getBody().toByteArray(), HashMap.class);
+        String body = new String(rawMessage.getBody().toByteArray());
+        Map<?, ?> jsonMap = objectMapper.readValue(body, HashMap.class);
 
         MessageID.Builder messageIdBuilder = this.getMessageIdBuilder(rawMessage);
         RawMessageMetadata.Builder rawMetaDataBuilder = this.getRawMetaDataBuilder(rawMessage);
@@ -98,7 +99,7 @@ public class HandProcessor {
                             .build();
                     RawMessage.Builder builderForValue = RawMessage.newBuilder()
                             .setMetadata(rawMsgMetaData)
-                            .setBody(ByteString.copyFromUtf8(dataAsString));
+                            .setBody(ByteString.copyFrom(dataAsString.getBytes()));
                     anyMsgBuilder.setRawMessage(builderForValue);
                     messages.add(anyMsgBuilder.build());
                 }
