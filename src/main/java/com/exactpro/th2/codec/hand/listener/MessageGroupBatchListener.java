@@ -40,27 +40,28 @@ public class MessageGroupBatchListener implements MessageListener<MessageGroupBa
     public void handler(String consumerTag, MessageGroupBatch message) {
 
         MessageGroupBatch.Builder outputBatchBuilder = MessageGroupBatch.newBuilder();
-
-        if (message.getGroupsCount() != 1) {
-            log.error("Received batch has more than one group!, router will not send anything!");
-            return;
-        }
-
+        
         try {
-            MessageGroup messageGroup = handDecoder.decode(message.getGroups(0));
+            
+            int groupNumber = 0;
+            for (MessageGroup messageGroup : message.getGroupsList()) {
+                ++groupNumber;
+                MessageGroup decodedGroup = handDecoder.decode(messageGroup);
 
+                if (decodedGroup == null) {
+                    log.info("Exception happened during decoding group {}, router won't send anything", groupNumber);
+                    continue;
+                }
 
-            if (messageGroup == null) {
-                log.info("Exception happened during decoding, router won't send anything");
-                return;
+                if (decodedGroup.getMessagesCount() == 0) {
+                    log.info("Messages weren't found in this group {}, router won't send anything", groupNumber);
+                    continue;
+                }
+                outputBatchBuilder.addGroups(decodedGroup);
             }
-
-            if (messageGroup.getMessagesCount() == 0) {
-                log.info("Messages weren't found in this batch, router won't send anything");
-                return;
-            }
-
-            batchGroupRouter.sendAll(outputBatchBuilder.addGroups(messageGroup).build());
+            
+            batchGroupRouter.sendAll(outputBatchBuilder.build());
+            
         } catch (Exception e) {
             log.error("Exception sending message(s)", e);
         }

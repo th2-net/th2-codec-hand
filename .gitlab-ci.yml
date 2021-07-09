@@ -2,7 +2,7 @@ variables:
   APP_NAME: "th2-codec-hand"
   MAJOR_VERSION: "0"
   MINOR_VERSION: "0"
-  MAINTENANCE_VERSION: '5'
+  MAINTENANCE_VERSION: '6'
   DOCKER_PUBLISH_ENABLED: 'true'
 
 include:
