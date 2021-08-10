@@ -17,12 +17,11 @@ Example of th2-hand output:
 }
 ```
 th2-hand codec will decode this kind of messages to display separated fields
-in the report-viewer and some fields will be passed as raw and can be accessible 
-other codecs in codec-pipeline.
+in the report-viewer and some fields will be passed as raw and can be accessible by other codecs in codec-pipeline.
 
 ## Configuration
 
-Main configuration is done via setting following properties in custom configuration block:
+Main configuration is done by setting the following properties in custom configuration block:
 
 1. `contentKey` (default value: `ActionResults`)
 2. `resultKey` (default value `data`)
@@ -100,7 +99,7 @@ spec:
 
 ### 0.1.4
 
-+ fixed issues with incorrect processing message groups
++ fixed issues with incorrect processing of message groups
 
 ### 0.1.3
 
