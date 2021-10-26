@@ -41,7 +41,7 @@ public class PlainStringHandProcessor extends AbstractHandProcessor<RawMessage> 
                     .addSubsequence(subSequenceNumber.getAndIncrement())).setMessageType(DEFAULT_MESSAGE_TYPE).build();
 
             String key = String.valueOf(node.getKey());
-            Value value = convertToValue(node.getKey());
+            Value value = convertToValue(node.getValue());
 
             anyMsgBuilder.setMessage(Message.newBuilder().setMetadata(msgMetaData).putFields(key, value));
             messages.add(anyMsgBuilder.build());
