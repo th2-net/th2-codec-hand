@@ -1,0 +1,2 @@
+com.exactpro.th2.codec.hand.processor.FixMessageHandProcessor
+com.exactpro.th2.codec.hand.processor.PlainStringHandProcessor

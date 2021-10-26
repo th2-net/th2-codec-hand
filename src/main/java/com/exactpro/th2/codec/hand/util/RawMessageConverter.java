@@ -11,17 +11,20 @@
  limitations under the License.
  */
 
-package com.exactpro.th2.codec.hand.processor;
+package com.exactpro.th2.codec.hand.util;
 
-import com.exactpro.th2.common.grpc.AnyMessage;
-import com.google.protobuf.AbstractMessage;
-import org.apache.commons.lang3.mutable.MutableInt;
+import com.exactpro.th2.common.grpc.RawMessage;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 
-public interface HandProcessor<T extends AbstractMessage> {
-    List<AnyMessage> processMessage(Map<?, ?> convertedMessage, T message, MutableInt subSequenceNumber);
+public class RawMessageConverter {
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    MessageType getMessageType();
+    public Map<?, ?> convert(RawMessage rawMessage) throws JsonProcessingException {
+        String body = new String(rawMessage.getBody().toByteArray());
+        return objectMapper.readValue(body, HashMap.class);
+    }
 }

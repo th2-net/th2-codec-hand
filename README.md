@@ -1,4 +1,4 @@
-# th2 codec hand (0.1.4)
+# th2 codec hand (0.2.0)
 
 This microservice can decode messages received from component th2-hand.
 Example of th2-hand output:
@@ -96,6 +96,10 @@ spec:
 ```
 
 ## Release notes
+
+### 0.2.0
+
++ Added the ability to process `FIX` messages
 
 ### 0.1.4
 

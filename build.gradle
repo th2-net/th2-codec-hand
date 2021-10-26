@@ -39,8 +39,6 @@ dependencies {
     api platform('com.exactpro.th2:bom:3.0.0')
 
     compile 'com.exactpro.th2:common:3.13.4'
-    compile "com.exactpro.sf:sailfish-common:3.2.1603"
-
 
     compile "org.slf4j:slf4j-log4j12"
 
