@@ -59,6 +59,7 @@ public class HandDecoder {
                 }
 
                 messages.forEach(messageGroupBuilder::addMessages);
+                log.info("Message successfully decoded");
             } catch (Exception e) {
                 log.error("Exception decoding message", e);
                 return null;

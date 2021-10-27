@@ -24,12 +24,15 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class PlainStringHandProcessor extends AbstractHandProcessor<RawMessage> {
     public static final String DEFAULT_MESSAGE_TYPE = "th2-hand";
 
     @Override
     public List<AnyMessage> processMessage(Map<?, ?> convertedMessage, RawMessage message, MutableInt subSequenceNumber) {
+        Objects.requireNonNull(convertedMessage, "Converted message cannot be null");
+
         MessageID.Builder messageIdBuilder = this.getMessageIdBuilder(message);
         MessageMetadata.Builder metaDataBuilder = this.getMetaDataBuilder(message);
 
