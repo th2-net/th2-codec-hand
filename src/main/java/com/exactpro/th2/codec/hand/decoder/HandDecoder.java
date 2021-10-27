@@ -17,7 +17,7 @@ import java.util.Map;
 @Slf4j
 public class HandDecoder {
 
-    private static final String MESSAGE_TYPE = "MessageType";
+    public static final String MESSAGE_TYPE = "MessageType";
 
     private final RawMessageConverter rawMessageConverter;
     private final Map<MessageType, HandProcessor<AbstractMessage>> handProcessors;

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,7 +52,9 @@ public class FixMessageHandProcessorTest extends AbstractHandProcessorTest {
         RawMessageMetadata expectedMetadata = rawMessage.getMetadata();
         RawMessageMetadata actualMetadata = receivedRawMessage.getMetadata();
         Assertions.assertNotEquals(expectedMetadata.getProtocol(), actualMetadata.getProtocol());
-        Assertions.assertEquals(expectedMetadata.getPropertiesMap(), actualMetadata.getPropertiesMap());
+        Map<String, String> expectedProperties = new HashMap<>(expectedMetadata.getPropertiesMap());
+        expectedProperties.put("MessageType", "FIX");
+        Assertions.assertEquals(expectedProperties, actualMetadata.getPropertiesMap());
         Assertions.assertEquals(ByteString.copyFrom("testValue", StandardCharsets.UTF_8), receivedRawMessage.getBody());
     }
 

@@ -15,16 +15,21 @@ package com.exactpro.th2.codec.hand.processor;
 
 import com.exactpro.th2.common.grpc.AnyMessage;
 import com.exactpro.th2.common.grpc.RawMessage;
-import com.exactpro.th2.common.grpc.RawMessageMetadata;
 import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import static com.exactpro.th2.codec.hand.decoder.HandDecoder.MESSAGE_TYPE;
 
 public class FixMessageHandProcessor extends AbstractHandProcessor<RawMessage> {
     private static final String ACTION_RESULTS = "ActionResults";
     private static final String ACTION_DATA = "data";
+    private static final String EXECUTION_ID = "ExecutionId";
 
 
     @Override
@@ -40,16 +45,22 @@ public class FixMessageHandProcessor extends AbstractHandProcessor<RawMessage> {
         }
         List<?> actionResults = (List<?>) rawActionResults;
         List<AnyMessage> messages = new ArrayList<>(actionResults.size());
-        RawMessageMetadata rawMessageMetadata = getRawMetaDataBuilder(message)
-                .setProtocol(getMessageType().getValue())
-                .build();
+        String messageType = getMessageType().getValue();
+        var rawMessageMetadataBuilder = getRawMetaDataBuilder(message)
+                .setProtocol(messageType)
+                .putProperties(MESSAGE_TYPE, messageType);
+        Object executionId = convertedMessage.get(EXECUTION_ID);
+        if (executionId instanceof String) {
+            rawMessageMetadataBuilder.putProperties(EXECUTION_ID, (String) executionId);
+        }
+        var rawMessageMetadata = rawMessageMetadataBuilder.build();
 
         for (Object value : actionResults) {
             if (!(value instanceof Map<?, ?>)) {
                 throw new IllegalStateException("Action result has invalid type");
             }
             Map<?, ?> keyValuePair = (Map<?, ?>) value;
-            Object actionValue = keyValuePair.get(ACTION_DATA);
+            Object actionValue = Objects.requireNonNull(keyValuePair.get(ACTION_DATA), "Action value is missing");
             if (!(actionValue instanceof String)) {
                 throw new IllegalStateException("Action value has invalid type");
             }
