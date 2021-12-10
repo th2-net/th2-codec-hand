@@ -8,14 +8,16 @@ import com.exactpro.th2.common.grpc.MessageGroup;
 import com.exactpro.th2.common.grpc.RawMessage;
 import com.exactpro.th2.common.message.MessageUtils;
 import com.google.protobuf.AbstractMessage;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.mutable.MutableInt;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 public class HandDecoder {
+
+    private static final Logger log = LoggerFactory.getLogger(HandDecoder.class);
 
     public static final String MESSAGE_TYPE = "MessageType";
 
@@ -52,9 +54,11 @@ public class HandDecoder {
                 }
 
                 List<AnyMessage> messages;
+
                 if (messageType.equals(MessageType.FIX.getValue())) {
                     messages = handProcessors.get(MessageType.FIX).processMessage(convertedMessage, rawMessage, subSequenceNumber);
                 } else {
+                    //default
                     messages = handProcessors.get(MessageType.PLAIN_STRING).processMessage(convertedMessage, rawMessage, subSequenceNumber);
                 }
 

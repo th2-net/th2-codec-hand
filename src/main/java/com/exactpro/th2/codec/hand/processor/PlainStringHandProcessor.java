@@ -22,6 +22,7 @@ import com.exactpro.th2.common.grpc.Value;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,20 +37,18 @@ public class PlainStringHandProcessor extends AbstractHandProcessor<RawMessage> 
         MessageID.Builder messageIdBuilder = this.getMessageIdBuilder(message);
         MessageMetadata.Builder metaDataBuilder = this.getMetaDataBuilder(message);
 
-        List<AnyMessage> messages = new ArrayList<>(convertedMessage.size());
+        AnyMessage.Builder anyMsgBuilder = AnyMessage.newBuilder();
+
+        var builder = Message.newBuilder().setMetadata(metaDataBuilder.setMessageType(DEFAULT_MESSAGE_TYPE).build());
+
         for (var node : convertedMessage.entrySet()) {
-            AnyMessage.Builder anyMsgBuilder = AnyMessage.newBuilder();
-
-            MessageMetadata msgMetaData = metaDataBuilder.setId(messageIdBuilder.clearSubsequence()
-                    .addSubsequence(subSequenceNumber.getAndIncrement())).setMessageType(DEFAULT_MESSAGE_TYPE).build();
-
             String key = String.valueOf(node.getKey());
             Value value = convertToValue(node.getValue());
 
-            anyMsgBuilder.setMessage(Message.newBuilder().setMetadata(msgMetaData).putFields(key, value));
-            messages.add(anyMsgBuilder.build());
+            builder.putFields(key, value);
         }
-        return messages;
+
+        return Collections.singletonList(anyMsgBuilder.setMessage(builder.build()).build());
     }
 
     @Override

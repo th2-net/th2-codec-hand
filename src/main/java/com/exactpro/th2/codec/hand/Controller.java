@@ -20,7 +20,8 @@ import com.exactpro.th2.codec.hand.processor.MessageType;
 import com.exactpro.th2.codec.hand.util.RawMessageConverter;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
 import com.google.protobuf.AbstractMessage;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -33,8 +34,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.exactpro.th2.common.metrics.CommonMetrics.setLiveness;
 import static com.exactpro.th2.common.metrics.CommonMetrics.setReadiness;
 
-@Slf4j
 public class Controller {
+
+    private static final Logger log = LoggerFactory.getLogger(Controller.class);
 
     private static volatile List<AutoCloseable> resources;
 
@@ -45,9 +47,10 @@ public class Controller {
 
         ReentrantLock lock = new ReentrantLock();
         Condition condition = lock.newCondition();
+        CommonFactory factory = null;
+
         try {
-            CommonFactory factory = CommonFactory.createFromArguments(args);
-            resources.add(factory);
+            factory = CommonFactory.createFromArguments(args);
 
             var parsedBatchRouter = factory.getMessageRouterMessageGroupBatch();
             resources.add(parsedBatchRouter);
@@ -64,7 +67,11 @@ public class Controller {
 
             awaitShutdown(lock, condition);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            log.error("Interrupted", e);
+        } finally {
+            if (factory != null) {
+                factory.close();
+            }
         }
     }
 
