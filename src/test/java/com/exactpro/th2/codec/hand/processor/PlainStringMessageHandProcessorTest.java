@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -68,7 +69,7 @@ public class PlainStringMessageHandProcessorTest extends AbstractHandProcessorTe
         Map<?, ?> convertedMessage = RAW_MESSAGE_CONVERTER.convert(rawMessage);
         List<AnyMessage> messages = PLAIN_STRING_MESSAGE_HAND_PROCESSOR.processMessage(convertedMessage, rawMessage, new MutableInt(0));
 
-        Assertions.assertEquals(3, messages.size());
+        Assertions.assertEquals(1, messages.size());
         Assertions.assertTrue(messages.stream().allMatch(AnyMessage::hasMessage));
         Assertions.assertTrue(
                 messages.stream()
@@ -77,11 +78,10 @@ public class PlainStringMessageHandProcessorTest extends AbstractHandProcessorTe
                         )
         );
         List<Map<String, Value>> actualFieldsList = messages.stream().map(m -> m.getMessage().getFieldsMap()).collect(Collectors.toList());
-        Assertions.assertEquals(expectedFields.size(), actualFieldsList.size());
+        Assertions.assertEquals(1, actualFieldsList.size());
+        Assertions.assertEquals(expectedFields.size(), actualFieldsList.get(0).size());
 
-        List<Map<String, Value>> expectedFieldsList = expectedFields.entrySet().stream()
-                .map(entry -> createKeyValueMap(Map.of(entry.getKey(), entry.getValue())))
-                .collect(Collectors.toList());
+        List<Map<String, Value>> expectedFieldsList = Collections.singletonList(createKeyValueMap(expectedFields));
         
         Assertions.assertTrue(expectedFieldsList.containsAll(actualFieldsList));
     }
