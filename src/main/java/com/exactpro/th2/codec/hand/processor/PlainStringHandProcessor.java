@@ -21,7 +21,6 @@ import com.exactpro.th2.common.grpc.RawMessage;
 import com.exactpro.th2.common.grpc.Value;
 import org.apache.commons.lang3.mutable.MutableInt;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -35,20 +34,22 @@ public class PlainStringHandProcessor extends AbstractHandProcessor<RawMessage> 
         Objects.requireNonNull(convertedMessage, "Converted message cannot be null");
 
         MessageID.Builder messageIdBuilder = this.getMessageIdBuilder(message);
-        MessageMetadata.Builder metaDataBuilder = this.getMetaDataBuilder(message);
+        MessageMetadata.Builder metaDataBuilder = this.getMetaDataBuilder(message)
+                .setId(messageIdBuilder)
+                .setMessageType(DEFAULT_MESSAGE_TYPE);
 
         AnyMessage.Builder anyMsgBuilder = AnyMessage.newBuilder();
 
-        var builder = Message.newBuilder().setMetadata(metaDataBuilder.setMessageType(DEFAULT_MESSAGE_TYPE).build());
+        var messageBuilder = Message.newBuilder().setMetadata(metaDataBuilder);
 
         for (var node : convertedMessage.entrySet()) {
             String key = String.valueOf(node.getKey());
             Value value = convertToValue(node.getValue());
 
-            builder.putFields(key, value);
+            messageBuilder.putFields(key, value);
         }
 
-        return Collections.singletonList(anyMsgBuilder.setMessage(builder.build()).build());
+        return Collections.singletonList(anyMsgBuilder.setMessage(messageBuilder).build());
     }
 
     @Override
