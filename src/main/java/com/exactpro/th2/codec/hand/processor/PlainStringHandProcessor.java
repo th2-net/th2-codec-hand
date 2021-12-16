@@ -35,7 +35,10 @@ public class PlainStringHandProcessor extends AbstractHandProcessor<RawMessage> 
 
         MessageID.Builder messageIdBuilder = this.getMessageIdBuilder(message);
         MessageMetadata.Builder metaDataBuilder = this.getMetaDataBuilder(message)
-                .setId(messageIdBuilder)
+                .setId(messageIdBuilder
+                        .clearSubsequence()
+                        .addSubsequence(subSequenceNumber.getAndIncrement())
+                )
                 .setMessageType(DEFAULT_MESSAGE_TYPE);
 
         AnyMessage.Builder anyMsgBuilder = AnyMessage.newBuilder();

@@ -14,6 +14,7 @@
 package com.exactpro.th2.codec.hand.processor;
 
 import com.exactpro.th2.common.grpc.AnyMessage;
+import com.exactpro.th2.common.grpc.MessageID;
 import com.exactpro.th2.common.grpc.RawMessage;
 import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -46,7 +47,12 @@ public class FixMessageHandProcessor extends AbstractHandProcessor<RawMessage> {
         List<?> actionResults = (List<?>) rawActionResults;
         List<AnyMessage> messages = new ArrayList<>(actionResults.size());
         String messageType = getMessageType().getValue();
+        MessageID.Builder messageIdBuilder = this.getMessageIdBuilder(message);
         var rawMessageMetadataBuilder = getRawMetaDataBuilder(message)
+                .setId(messageIdBuilder
+                        .clearSubsequence()
+                        .addSubsequence(subSequenceNumber.getAndIncrement())
+                )
                 .setProtocol(messageType)
                 .putProperties(MESSAGE_TYPE, messageType);
         Object executionId = convertedMessage.get(EXECUTION_ID);
