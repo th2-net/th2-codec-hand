@@ -20,10 +20,10 @@ import com.google.protobuf.ByteString;
 import org.apache.commons.lang3.mutable.MutableInt;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import static com.exactpro.th2.codec.hand.decoder.HandDecoder.MESSAGE_TYPE;
 
@@ -34,7 +34,7 @@ public class FixMessageHandProcessor extends AbstractHandProcessor<RawMessage> {
     private static final String EXECUTION_ID = "ExecutionId";
 
     @Override
-    public List<AnyMessage> processMessage(Map<?, ?> convertedMessage, RawMessage message, MutableInt subSequenceNumber) {
+    public void processMessage(Map<?, ?> convertedMessage, RawMessage message, MutableInt subSequenceNumber, Consumer<AnyMessage> messageConsumer) {
         Objects.requireNonNull(convertedMessage, "Converted message cannot be null");
 
         Object rawActionResults = Objects.requireNonNull(
@@ -45,7 +45,6 @@ public class FixMessageHandProcessor extends AbstractHandProcessor<RawMessage> {
             throw new IllegalStateException("Action results has invalid type");
         }
         List<?> actionResults = (List<?>) rawActionResults;
-        List<AnyMessage> messages = new ArrayList<>(actionResults.size());
         String messageType = getMessageType().getValue();
         MessageID.Builder messageIdBuilder = this.getMessageIdBuilder(message);
         var rawMessageMetadataBuilder = getRawMetaDataBuilder(message)
@@ -79,10 +78,8 @@ public class FixMessageHandProcessor extends AbstractHandProcessor<RawMessage> {
                     .setRawMessage(newRawMessage)
                     .build();
 
-            messages.add(anyMessage);
+            messageConsumer.accept(anyMessage);
         }
-
-        return messages;
     }
 
     @Override

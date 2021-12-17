@@ -12,7 +12,6 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.Map;
 
 public class HandDecoder {
@@ -30,8 +29,9 @@ public class HandDecoder {
         this.handProcessors = handProcessors;
     }
 
-    public MessageGroup decode (MessageGroup group) {
-        MessageGroup.Builder messageGroupBuilder = MessageGroup.newBuilder();
+    public DecoderResult decode(MessageGroup group) {
+
+        DecoderResult decoderResult = new DecoderResult();
 
         MutableInt subSequenceNumber = new MutableInt(1);
         for (var anyMessage : group.getMessagesList()) {
@@ -40,7 +40,8 @@ public class HandDecoder {
                     log.info("Start decoding message: {}", MessageUtils.toJson(anyMessage));
                 }
                 if (anyMessage.hasMessage()) {
-                    messageGroupBuilder.addMessages(AnyMessage.newBuilder().setMessage(anyMessage.getMessage()).build());
+                    AnyMessage message = AnyMessage.newBuilder().setMessage(anyMessage.getMessage()).build();
+                    decoderResult.addMessage(message);
                     continue;
                 }
 
@@ -53,16 +54,13 @@ public class HandDecoder {
                     continue;
                 }
 
-                List<AnyMessage> messages;
-
                 if (messageType.equals(MessageType.FIX.getValue())) {
-                    messages = handProcessors.get(MessageType.FIX).processMessage(convertedMessage, rawMessage, subSequenceNumber);
+                    handProcessors.get(MessageType.FIX).processMessage(convertedMessage, rawMessage, subSequenceNumber, decoderResult::addRawMessage);
                 } else {
                     //default
-                    messages = handProcessors.get(MessageType.PLAIN_STRING).processMessage(convertedMessage, rawMessage, subSequenceNumber);
+                    handProcessors.get(MessageType.PLAIN_STRING).processMessage(convertedMessage, rawMessage, subSequenceNumber, decoderResult::addMessage);
                 }
 
-                messages.forEach(messageGroupBuilder::addMessages);
                 log.info("Message successfully decoded");
             } catch (Exception e) {
                 log.error("Exception decoding message", e);
@@ -70,6 +68,6 @@ public class HandDecoder {
             }
         }
 
-        return messageGroupBuilder.build();
+        return decoderResult;
     }
 }

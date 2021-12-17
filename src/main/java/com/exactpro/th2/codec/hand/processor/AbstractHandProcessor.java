@@ -13,19 +13,22 @@
 
 package com.exactpro.th2.codec.hand.processor;
 
-import com.exactpro.th2.common.grpc.ListValue;
-import com.exactpro.th2.common.grpc.Message;
-import com.exactpro.th2.common.grpc.MessageID;
-import com.exactpro.th2.common.grpc.MessageMetadata;
-import com.exactpro.th2.common.grpc.RawMessage;
-import com.exactpro.th2.common.grpc.RawMessageMetadata;
-import com.exactpro.th2.common.grpc.Value;
+import com.exactpro.th2.common.grpc.*;
 import com.google.protobuf.AbstractMessage;
+import org.apache.commons.lang3.mutable.MutableInt;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractHandProcessor<T extends AbstractMessage> implements HandProcessor<T> {
+
+    @Override
+    public List<AnyMessage> processMessage(Map<?, ?> convertedMessage, T message, MutableInt subSequenceNumber) {
+        List<AnyMessage> messages = new ArrayList<>();
+        processMessage(convertedMessage, message, subSequenceNumber, messages::add);
+        return messages;
+    }
 
     protected MessageID.Builder getMessageIdBuilder(RawMessage rawMessage) {
         return rawMessage.getMetadata().getId().toBuilder();

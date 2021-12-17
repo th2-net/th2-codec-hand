@@ -13,24 +13,18 @@
 
 package com.exactpro.th2.codec.hand.processor;
 
-import com.exactpro.th2.common.grpc.AnyMessage;
-import com.exactpro.th2.common.grpc.Message;
-import com.exactpro.th2.common.grpc.MessageID;
-import com.exactpro.th2.common.grpc.MessageMetadata;
-import com.exactpro.th2.common.grpc.RawMessage;
-import com.exactpro.th2.common.grpc.Value;
+import com.exactpro.th2.common.grpc.*;
 import org.apache.commons.lang3.mutable.MutableInt;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public class PlainStringHandProcessor extends AbstractHandProcessor<RawMessage> {
     public static final String DEFAULT_MESSAGE_TYPE = "th2-hand";
 
     @Override
-    public List<AnyMessage> processMessage(Map<?, ?> convertedMessage, RawMessage message, MutableInt subSequenceNumber) {
+    public void processMessage(Map<?, ?> convertedMessage, RawMessage message, MutableInt subSequenceNumber, Consumer<AnyMessage> messageConsumer) {
         Objects.requireNonNull(convertedMessage, "Converted message cannot be null");
 
         MessageID.Builder messageIdBuilder = this.getMessageIdBuilder(message);
@@ -52,7 +46,7 @@ public class PlainStringHandProcessor extends AbstractHandProcessor<RawMessage> 
             messageBuilder.putFields(key, value);
         }
 
-        return Collections.singletonList(anyMsgBuilder.setMessage(messageBuilder).build());
+        messageConsumer.accept(anyMsgBuilder.setMessage(messageBuilder).build());
     }
 
     @Override

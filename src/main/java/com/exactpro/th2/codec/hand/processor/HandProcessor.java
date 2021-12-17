@@ -19,9 +19,13 @@ import org.apache.commons.lang3.mutable.MutableInt;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public interface HandProcessor<T extends AbstractMessage> {
     List<AnyMessage> processMessage(Map<?, ?> convertedMessage, T message, MutableInt subSequenceNumber);
+
+    void processMessage(Map<?, ?> convertedMessage, T message, MutableInt subSequenceNumber, Consumer<AnyMessage> messageConsumer);
+
 
     MessageType getMessageType();
 }
