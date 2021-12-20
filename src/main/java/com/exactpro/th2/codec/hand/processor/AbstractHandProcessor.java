@@ -22,9 +22,6 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractHandProcessor<T extends AbstractMessage> implements HandProcessor<T> {
-    protected static final String ACTION_RESULTS = "ActionResults";
-    protected static final String ACTION_DATA = "data";
-
 
     @Override
     public List<AnyMessage> processMessage(Map<?, ?> convertedMessage, T message, MutableInt subSequenceNumber) {

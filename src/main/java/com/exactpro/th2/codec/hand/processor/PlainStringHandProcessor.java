@@ -16,7 +16,6 @@ package com.exactpro.th2.codec.hand.processor;
 import com.exactpro.th2.common.grpc.*;
 import org.apache.commons.lang3.mutable.MutableInt;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -41,29 +40,8 @@ public class PlainStringHandProcessor extends AbstractHandProcessor<RawMessage> 
         var messageBuilder = Message.newBuilder().setMetadata(metaDataBuilder);
 
         for (var node : convertedMessage.entrySet()) {
-            Object nodeKey = node.getKey();
-            Object nodeValue = node.getValue();
-
-            if (nodeKey.equals(ACTION_RESULTS)) {
-                if (!(nodeValue instanceof List<?>)) {
-                    throw new IllegalStateException("Action results has invalid type");
-                }
-
-                Message.Builder actionResultMessage = Message.newBuilder();
-                List<?> actionResults = (List<?>) nodeValue;
-
-                for (Object actionResult : actionResults) {
-                    if (!(actionResult instanceof Map<?, ?>)) {
-                        throw new IllegalStateException("Action result has invalid type");
-                    }
-                    Map<?, ?> keyValuePair = (Map<?, ?>) actionResult;
-                    keyValuePair.forEach((k, v) -> actionResultMessage.putFields((String) k, convertToValue(v)));
-                }
-                messageBuilder.putFields(ACTION_RESULTS, Value.newBuilder().setMessageValue(actionResultMessage).build());
-                continue;
-            }
-            String key = String.valueOf(nodeKey);
-            Value value = convertToValue(nodeValue);
+            String key = String.valueOf(node.getKey());
+            Value value = convertToValue(node.getValue());
 
             messageBuilder.putFields(key, value);
         }

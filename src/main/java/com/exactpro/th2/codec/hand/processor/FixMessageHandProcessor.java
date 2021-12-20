@@ -29,6 +29,8 @@ import static com.exactpro.th2.codec.hand.decoder.HandDecoder.MESSAGE_TYPE;
 
 public class FixMessageHandProcessor extends AbstractHandProcessor<RawMessage> {
 
+    private static final String ACTION_RESULTS = "ActionResults";
+    private static final String ACTION_DATA = "data";
     private static final String EXECUTION_ID = "ExecutionId";
 
     @Override
