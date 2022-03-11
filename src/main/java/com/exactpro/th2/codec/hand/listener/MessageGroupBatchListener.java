@@ -18,15 +18,17 @@ import com.exactpro.th2.common.grpc.MessageGroup;
 import com.exactpro.th2.common.grpc.MessageGroupBatch;
 import com.exactpro.th2.common.schema.message.MessageListener;
 import com.exactpro.th2.common.schema.message.MessageRouter;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
     Listener receives RawMessages, uses FixDecoder and
     sends generated MessageBatch via MessageRouter
  */
 
-@Slf4j
 public class MessageGroupBatchListener implements MessageListener<MessageGroupBatch> {
+
+    private static final Logger log = LoggerFactory.getLogger(MessageGroupBatchListener.class);
 
     private MessageRouter<MessageGroupBatch> batchGroupRouter;
     private HandDecoder handDecoder;

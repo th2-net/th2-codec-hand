@@ -1,5 +1,5 @@
 /*
- Copyright 2020-2020 Exactpro (Exactpro Systems Limited)
+ Copyright 2020-2021 Exactpro (Exactpro Systems Limited)
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -15,21 +15,28 @@ package com.exactpro.th2.codec.hand;
 
 import com.exactpro.th2.codec.hand.decoder.HandDecoder;
 import com.exactpro.th2.codec.hand.listener.MessageGroupBatchListener;
-import com.exactpro.th2.codec.hand.processor.HandProcessorConfiguration;
 import com.exactpro.th2.codec.hand.processor.HandProcessor;
+import com.exactpro.th2.codec.hand.processor.MessageType;
+import com.exactpro.th2.codec.hand.util.RawMessageConverter;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
-import lombok.extern.slf4j.Slf4j;
+import com.google.protobuf.AbstractMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.exactpro.th2.common.metrics.CommonMetrics.setLiveness;
 import static com.exactpro.th2.common.metrics.CommonMetrics.setReadiness;
 
-@Slf4j
 public class Controller {
+
+    private static final Logger log = LoggerFactory.getLogger(Controller.class);
 
     private static volatile List<AutoCloseable> resources;
 
@@ -40,9 +47,10 @@ public class Controller {
 
         ReentrantLock lock = new ReentrantLock();
         Condition condition = lock.newCondition();
+        CommonFactory factory = null;
+
         try {
-            CommonFactory factory = CommonFactory.createFromArguments();
-            resources.add(factory);
+            factory = CommonFactory.createFromArguments(args);
 
             var parsedBatchRouter = factory.getMessageRouterMessageGroupBatch();
             resources.add(parsedBatchRouter);
@@ -53,16 +61,17 @@ public class Controller {
             configureShutdownHook(lock, condition);
             setReadiness(true);
 
-            HandProcessorConfiguration handProcessorConfiguration = factory.getCustomConfiguration(HandProcessorConfiguration.class);
-            HandProcessor handProcessor = new HandProcessor(handProcessorConfiguration);
-
-            HandDecoder handDecoder = new HandDecoder(handProcessor);
+            HandDecoder handDecoder = createDecoder();
             MessageGroupBatchListener messageGroupBatchListener = new MessageGroupBatchListener(parsedBatchRouter, handDecoder);
             rawBatchRouter.subscribeAll(messageGroupBatchListener);
 
             awaitShutdown(lock, condition);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            log.error("Interrupted", e);
+        } finally {
+            if (factory != null) {
+                factory.close();
+            }
         }
     }
 
@@ -103,5 +112,18 @@ public class Controller {
                 setLiveness(false);
             }
         });
+    }
+
+    private static HandDecoder createDecoder() {
+        return new HandDecoder(new RawMessageConverter(), getHandProcessors());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<MessageType, HandProcessor<AbstractMessage>> getHandProcessors() {
+        Map<MessageType, HandProcessor<AbstractMessage>> processors = new EnumMap<>(MessageType.class);
+        for (var handProcessor : ServiceLoader.load(HandProcessor.class)) {
+            processors.put(handProcessor.getMessageType(), handProcessor);
+        }
+        return processors;
     }
 }
