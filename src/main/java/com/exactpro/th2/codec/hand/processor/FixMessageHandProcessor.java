@@ -39,10 +39,10 @@ public class FixMessageHandProcessor extends AbstractHandProcessor<RawMessage> {
 
         Object rawActionResults = Objects.requireNonNull(
                 convertedMessage.get(ACTION_RESULTS),
-                "RawMessage cannot be processed because 'ActionResults' key is missing"
+                "RawMessage cannot be processed because '" + ACTION_RESULTS + "' key is missing"
         );
         if (!(rawActionResults instanceof List<?>)) {
-            throw new IllegalStateException("Action results has invalid type");
+            throw new IllegalStateException("Action results has invalid type '" + rawActionResults.getClass().getName() + "'");
         }
         List<?> actionResults = (List<?>) rawActionResults;
         List<AnyMessage> messages = new ArrayList<>(actionResults.size());
@@ -68,7 +68,7 @@ public class FixMessageHandProcessor extends AbstractHandProcessor<RawMessage> {
             Map<?, ?> keyValuePair = (Map<?, ?>) value;
             Object actionValue = Objects.requireNonNull(keyValuePair.get(ACTION_DATA), "Action value is missing");
             if (!(actionValue instanceof String)) {
-                throw new IllegalStateException("Action value has invalid type");
+                throw new IllegalStateException("Action value has invalid type '" + actionValue.getClass().getName() + "'");
             }
             RawMessage newRawMessage = message.toBuilder()
                     .setMetadata(rawMessageMetadata)

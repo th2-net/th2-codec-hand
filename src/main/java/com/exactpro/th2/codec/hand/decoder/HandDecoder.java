@@ -49,7 +49,7 @@ public class HandDecoder {
 
                 Object messageType = convertedMessage.get(MESSAGE_TYPE);
                 if (messageType == null) {
-                    log.error("An error occurred while decoding message");
+                    log.error("Message {} do not contain a mandatory field '{}' and can not be decoded", convertedMessage, MESSAGE_TYPE);
                     continue;
                 }
 
@@ -64,6 +64,8 @@ public class HandDecoder {
 
                 messages.forEach(messageGroupBuilder::addMessages);
                 log.info("Message successfully decoded");
+                if (log.isDebugEnabled())
+                    log.debug("Decoded messages: {}", messages);
             } catch (Exception e) {
                 log.error("Exception decoding message", e);
                 return null;
