@@ -81,3 +81,7 @@ jar {
 application {
     mainClassName 'com.exactpro.th2.codec.hand.Controller'
 }
+
+dependencyCheck {
+    formats=['SARIF']
+}
