@@ -14,10 +14,17 @@
 plugins {
     id 'java-library'
     id 'application'
+    id "org.owasp.dependencycheck" version "7.4.4"
 }
 
 group = 'com.exactpro.th2'
 version = release_version
+
+configurations {
+    compileClasspath {
+        resolutionStrategy.activateDependencyLocking()
+    }
+}
 
 repositories {
     mavenCentral()
@@ -73,4 +80,8 @@ jar {
 
 application {
     mainClassName 'com.exactpro.th2.codec.hand.Controller'
+}
+
+dependencyCheck {
+    formats=['SARIF']
 }
