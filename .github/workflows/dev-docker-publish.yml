@@ -1,13 +1,11 @@
-name: Dev build and publish Docker distributions to Github Container Registry ghcr.io
+name: Build and publish Docker distributions to Github Container Registry ghcr.io
 
 on:
   push:
-    branches-ignore:
+    branches:
       - master
-      - version-*
-      - dependabot**
-    paths-ignore:
-      - README.md
+    paths:
+      - gradle.properties
 
 jobs:
   build-job:
