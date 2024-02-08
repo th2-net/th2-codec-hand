@@ -3,12 +3,13 @@ package com.exactpro.th2.codec.hand.decoder;
 import com.exactpro.th2.codec.hand.processor.HandProcessor;
 import com.exactpro.th2.common.grpc.AnyMessage;
 import com.exactpro.th2.common.grpc.MessageGroup;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-@Slf4j
 public class HandDecoder {
+    private static final Logger log = LoggerFactory.getLogger(HandDecoder.class);
 
     private final HandProcessor handProcessor;
 

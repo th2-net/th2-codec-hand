@@ -18,7 +18,8 @@ import com.exactpro.th2.codec.hand.listener.MessageGroupBatchListener;
 import com.exactpro.th2.codec.hand.processor.HandProcessorConfiguration;
 import com.exactpro.th2.codec.hand.processor.HandProcessor;
 import com.exactpro.th2.common.schema.factory.CommonFactory;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,9 +29,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import static com.exactpro.th2.common.metrics.CommonMetrics.setLiveness;
 import static com.exactpro.th2.common.metrics.CommonMetrics.setReadiness;
 
-@Slf4j
 public class Controller {
-
+    private static final Logger log = LoggerFactory.getLogger(Controller.class);
     private static volatile List<AutoCloseable> resources;
 
     public static void main(String[] args) {
@@ -62,7 +62,7 @@ public class Controller {
 
             awaitShutdown(lock, condition);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            log.error(e.getMessage(), e);
         }
     }
 

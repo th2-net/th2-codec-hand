@@ -13,17 +13,29 @@
 package com.exactpro.th2.codec.hand.processor;
 
 import com.exactpro.th2.common.schema.configuration.Configuration;
-import lombok.Getter;
-import lombok.Setter;
 
 /*
-    When classes name says thousand words
+    When classes name says a thousand words
     comment is redundant, but whatever
  */
 
-@Getter
-@Setter
 public class HandProcessorConfiguration extends Configuration {
     private String contentKey = "ActionResults";
     private String resultKey = "data";
+
+    public String getContentKey() {
+        return contentKey;
+    }
+
+    public void setContentKey(String contentKey) {
+        this.contentKey = contentKey;
+    }
+
+    public String getResultKey() {
+        return resultKey;
+    }
+
+    public void setResultKey(String resultKey) {
+        this.resultKey = resultKey;
+    }
 }

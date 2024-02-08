@@ -16,20 +16,23 @@ package com.exactpro.th2.codec.hand.listener;
 import com.exactpro.th2.codec.hand.decoder.HandDecoder;
 import com.exactpro.th2.common.grpc.MessageGroup;
 import com.exactpro.th2.common.grpc.MessageGroupBatch;
+import com.exactpro.th2.common.schema.message.DeliveryMetadata;
 import com.exactpro.th2.common.schema.message.MessageListener;
 import com.exactpro.th2.common.schema.message.MessageRouter;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
     Listener receives RawMessages, uses FixDecoder and
     sends generated MessageBatch via MessageRouter
  */
 
-@Slf4j
 public class MessageGroupBatchListener implements MessageListener<MessageGroupBatch> {
 
-    private MessageRouter<MessageGroupBatch> batchGroupRouter;
-    private HandDecoder handDecoder;
+    private static final Logger log = LoggerFactory.getLogger(MessageGroupBatchListener.class);
+
+    private final MessageRouter<MessageGroupBatch> batchGroupRouter;
+    private final HandDecoder handDecoder;
 
     public MessageGroupBatchListener(MessageRouter<MessageGroupBatch> batchGroupRouter, HandDecoder handDecoder) {
         this.batchGroupRouter = batchGroupRouter;
@@ -37,8 +40,7 @@ public class MessageGroupBatchListener implements MessageListener<MessageGroupBa
     }
 
     @Override
-    public void handler(String consumerTag, MessageGroupBatch message) {
-
+    public void handle(DeliveryMetadata deliveryMetadata, MessageGroupBatch message) {
         MessageGroupBatch.Builder outputBatchBuilder = MessageGroupBatch.newBuilder();
         
         try {
@@ -65,10 +67,5 @@ public class MessageGroupBatchListener implements MessageListener<MessageGroupBa
         } catch (Exception e) {
             log.error("Exception sending message(s)", e);
         }
-    }
-
-    @Override
-    public void onClose() {
-
     }
 }

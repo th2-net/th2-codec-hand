@@ -13,10 +13,18 @@
 
 package com.exactpro.th2.codec.hand.processor;
 
-import com.exactpro.th2.common.grpc.*;
+import com.exactpro.th2.common.grpc.AnyMessage;
+import com.exactpro.th2.common.grpc.ListValue;
+import com.exactpro.th2.common.grpc.Message;
+import com.exactpro.th2.common.grpc.MessageID;
+import com.exactpro.th2.common.grpc.MessageMetadata;
+import com.exactpro.th2.common.grpc.RawMessage;
+import com.exactpro.th2.common.grpc.RawMessageMetadata;
+import com.exactpro.th2.common.grpc.Value;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -29,8 +37,8 @@ import java.util.Map;
     and Message generation
  */
 
-@Slf4j
 public class HandProcessor {
+    private static final Logger log = LoggerFactory.getLogger(HandProcessor.class);
     public static final String DEFAULT_MESSAGE_TYPE = "th2-hand";
     private final HandProcessorConfiguration configuration;
 
@@ -45,7 +53,8 @@ public class HandProcessor {
 
     private MessageMetadata.Builder getMetaDataBuilder(RawMessage rawMessage) {
         RawMessageMetadata metadata = rawMessage.getMetadata();
-        return MessageMetadata.newBuilder().setId(metadata.getId()).setTimestamp(metadata.getTimestamp())
+        return MessageMetadata.newBuilder()
+                .setId(metadata.getId().toBuilder().setTimestamp(metadata.getId().getTimestamp()).build())
                 .putAllProperties(metadata.getPropertiesMap()).setProtocol(metadata.getProtocol());
     }
 
@@ -79,14 +88,14 @@ public class HandProcessor {
                 for (Object iterableValue : iterableValues) {
                     if (!(iterableValue instanceof Map)) {
                         log.error("Expected type of {} is map but received: {}", iterableValue,
-                                iterableValue.getClass().toString());
+                                iterableValue.getClass());
                         continue;
                     }
 
                     Object rawData = ((Map<?, ?>) iterableValue).get(configuration.getResultKey());
                     if (!(rawData instanceof String)) {
                         log.error("Expected type of {} is string but received: {}", rawData,
-                                rawData.getClass().toString());
+                                rawData.getClass());
                         continue;
                     }
                     String dataAsString = (String) rawData;
@@ -106,13 +115,13 @@ public class HandProcessor {
             } else {
                 AnyMessage.Builder anyMsgBuilder = AnyMessage.newBuilder();
 
-                MessageMetadata msgmetaData = metaDataBuilder.setId(messageIdBuilder.clearSubsequence()
+                MessageMetadata msgMetaData = metaDataBuilder.setId(messageIdBuilder.clearSubsequence()
                         .addSubsequence(subsequenceNumber++)).setMessageType(DEFAULT_MESSAGE_TYPE).build();
                 
                 String key = String.valueOf(entry.getKey());
                 Value value = this.convertToValue(entry.getValue());
                 
-                anyMsgBuilder.setMessage(Message.newBuilder().setMetadata(msgmetaData).putFields(key, value));
+                anyMsgBuilder.setMessage(Message.newBuilder().setMetadata(msgMetaData).putFields(key, value));
                 messages.add(anyMsgBuilder.build());
             }
         }
