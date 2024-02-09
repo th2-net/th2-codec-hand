@@ -24,9 +24,8 @@ dependencies {
     implementation "com.exactpro.th2:common-utils:2.2.2-dev"
     implementation "com.exactpro.th2:codec:5.4.1-dev"
 
-//    compile "com.exactpro.sf:sailfish-common:3.2.1603"
-
     implementation "com.fasterxml.jackson.core:jackson-databind"
+    implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
     implementation 'org.apache.commons:commons-lang3'
 
 
@@ -35,8 +34,23 @@ dependencies {
     annotationProcessor "com.google.auto.service:auto-service:1.1.1"
 //    annotationProcessor "org.projectlombok:lombok:1.18.12"
     kapt "com.google.auto.service:auto-service:1.1.1"
+
+    testImplementation 'com.exactpro.th2:junit-jupiter-integration:0.0.1-master-6956603819-5241ee5-SNAPSHOT'
 }
 
 java {
     withSourcesJar()
+}
+
+test {
+    useJUnitPlatform {
+        excludeTags('integration')
+    }
+}
+
+tasks.register('integrationTest', Test) {
+    group = 'verification'
+    useJUnitPlatform {
+        includeTags('integration')
+    }
 }
