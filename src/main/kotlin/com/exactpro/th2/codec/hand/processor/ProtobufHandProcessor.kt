@@ -17,6 +17,8 @@ package com.exactpro.th2.codec.hand.processor
 
 import com.exactpro.th2.codec.hand.CodecHandSettings
 import com.exactpro.th2.codec.hand.processor.ProtobufHandProcessor.Companion.Context
+import com.exactpro.th2.codec.util.ERROR_CONTENT_FIELD
+import com.exactpro.th2.codec.util.ERROR_TYPE_MESSAGE
 import com.exactpro.th2.common.grpc.AnyMessage
 import com.exactpro.th2.common.grpc.EventID
 import com.exactpro.th2.common.grpc.Message
@@ -55,10 +57,16 @@ class ProtobufHandProcessor(
         }.build()
 
     override fun createParsed(context: Context, subSequence: Int, key: String, value: Any): AnyMessage =
+        createParsed(context, DEFAULT_MESSAGE_TYPE, subSequence, key, value)
+
+    override fun createError(context: Context, subSequence: Int, text: String): AnyMessage =
+        createParsed(context, ERROR_TYPE_MESSAGE, subSequence, ERROR_CONTENT_FIELD, text)
+
+    private fun createParsed(context: Context, type: String, subSequence: Int, key: String, value: Any): AnyMessage =
         AnyMessage.newBuilder().apply {
             val msgMetaData = context.metaDataBuilder.setId(
                 context.messageIdBuilder.clearSubsequence().addSubsequence(subSequence)
-            ).setMessageType(DEFAULT_MESSAGE_TYPE).build()
+            ).setMessageType(type).build()
 
             setMessage(
                 Message.newBuilder().apply {

@@ -37,9 +37,9 @@ abstract class HandProcessor<M, C, R>(
         jsonMap.forEach loop1@ { (key, value) ->
             if (key == settings.contentKey) {
                 if (value !is List<*>) {
-                    LOGGER.error {
-                        "Expected value for '$key' is list but received: '${value.javaClass}'"
-                    }
+                    val text = "Expected value for '$key' is list but received: '${value.javaClass}'"
+                    LOGGER.error(text)
+                    onMessage(createError(context, subSequence, text))
                     return@loop1
                 }
 
@@ -47,17 +47,17 @@ abstract class HandProcessor<M, C, R>(
 
                 value.forEach loop2@ { iterableValue ->
                     if (iterableValue !is Map<*, *>) {
-                        LOGGER.error{
-                            "Expected type of $iterableValue is map but received: ${iterableValue?.javaClass}"
-                        }
+                        val text = "Expected type of $iterableValue is map but received: ${iterableValue?.javaClass}"
+                        LOGGER.error(text)
+                        onMessage(createError(context, subSequence, text))
                         return@loop2
                     }
 
                     val rawData: Any? = iterableValue[settings.resultKey]
                     if (rawData !is String) {
-                        LOGGER.error {
-                            "Expected type of $rawData is string but received: ${rawData?.javaClass}"
-                        }
+                        val text = "Expected type of $rawData is string but received: ${rawData?.javaClass}"
+                        LOGGER.error(text)
+                        onMessage(createError(context, subSequence, text))
                         return@loop2
                     }
                     if (rawData.isEmpty()) return@loop2
@@ -79,6 +79,8 @@ abstract class HandProcessor<M, C, R>(
     abstract fun createRaw(context: C, subSequence: Int, rawData: String): R
 
     abstract fun createParsed(context: C, subSequence: Int, key: String, value: Any): R
+
+    abstract fun createError(context: C, subSequence: Int, text: String): R
 
     companion object {
         private val LOGGER = KotlinLogging.logger {}

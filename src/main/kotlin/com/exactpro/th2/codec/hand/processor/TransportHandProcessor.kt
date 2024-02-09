@@ -17,6 +17,8 @@ package com.exactpro.th2.codec.hand.processor
 
 import com.exactpro.th2.codec.hand.CodecHandSettings
 import com.exactpro.th2.codec.hand.processor.TransportHandProcessor.Companion.Context
+import com.exactpro.th2.codec.util.ERROR_CONTENT_FIELD
+import com.exactpro.th2.codec.util.ERROR_TYPE_MESSAGE
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.EventId
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.Message
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.MessageId
@@ -40,9 +42,15 @@ class TransportHandProcessor(
         }.build()
 
     override fun createParsed(context: Context, subSequence: Int, key: String, value: Any): ParsedMessage =
+        createParsed(context, DEFAULT_MESSAGE_TYPE, subSequence, key, value)
+
+    override fun createError(context: Context, subSequence: Int, text: String): ParsedMessage =
+        createParsed(context, ERROR_TYPE_MESSAGE, subSequence, ERROR_CONTENT_FIELD, text)
+
+    private fun createParsed(context: Context, type: String, subSequence: Int, key: String, value: Any): ParsedMessage =
         ParsedMessage.builder().apply {
             fill(context, subSequence)
-            setType(DEFAULT_MESSAGE_TYPE)
+            setType(type)
             addField(key, value)
         }.build()
 

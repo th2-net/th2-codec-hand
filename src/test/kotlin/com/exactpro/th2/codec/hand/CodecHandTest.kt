@@ -18,10 +18,13 @@ package com.exactpro.th2.codec.hand
 
 import com.exactpro.th2.codec.api.IReportingContext
 import com.exactpro.th2.codec.hand.processor.HandProcessor.Companion.DEFAULT_MESSAGE_TYPE
+import com.exactpro.th2.codec.util.ERROR_CONTENT_FIELD
+import com.exactpro.th2.codec.util.ERROR_TYPE_MESSAGE
 import com.exactpro.th2.common.grpc.Direction
 import com.exactpro.th2.common.grpc.EventID
 import com.exactpro.th2.common.grpc.Message
 import com.exactpro.th2.common.grpc.MessageID
+import com.exactpro.th2.common.grpc.Value
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.Direction.OUTGOING
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.EventId
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.MessageId
@@ -45,7 +48,7 @@ import strikt.assertions.hasSize
 import strikt.assertions.isA
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
-import strikt.assertions.isNull
+import strikt.assertions.isNotBlank
 import strikt.assertions.isSameInstanceAs
 import strikt.assertions.isTrue
 import java.time.Instant
@@ -83,12 +86,20 @@ class CodecHandTest {
         fun decode()
 
         @ParameterizedTest
-        @ValueSource(strings = ["\"\"", "[]", "[\"\"]"])
-        fun `incorrect type of content`(content: String)
+        @ValueSource(strings = ["[]"])
+        fun `skip incorrect type of content`(content: String)
 
         @ParameterizedTest
-        @ValueSource(strings = ["\"\"", "[]", "{}"])
-        fun `incorrect type of result`(result: String)
+        @ValueSource(strings = ["\"\"", "[\"\"]"])
+        fun `error incorrect type of content`(content: String)
+
+        @ParameterizedTest
+        @ValueSource(strings = ["\"\""])
+        fun `skip incorrect type of result`(result: String)
+
+        @ParameterizedTest
+        @ValueSource(strings = ["[]", "{}"])
+        fun `error incorrect type of result`(result: String)
     }
 
     @Nested
@@ -174,19 +185,15 @@ class CodecHandTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = ["\"\"", "[]", "[\"\"]"])
-        override fun `incorrect type of content`(content: String) {
+        @ValueSource(strings = ["[]"])
+        override fun `skip incorrect type of content`(content: String) {
             val group = codec.decode(
                 ProtobufMessageGroup.newBuilder().apply {
                     addMessagesBuilder().rawMessageBuilder.apply {
                         metadataBuilder.apply {
                             idBuilder.generate()
                         }
-                        body = ByteString.copyFrom("""
-                        {
-                          "${config.contentKey}": $content
-                        }
-                    """.trimIndent(), Charsets.UTF_8)
+                        body = ByteString.copyFrom(generateContent(content), Charsets.UTF_8)
                     }
                 }.build(),
                 context
@@ -198,23 +205,54 @@ class CodecHandTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = ["\"\"", "[]", "{}"])
-        override fun `incorrect type of result`(result: String) {
+        @ValueSource(strings = ["\"\"", "[\"\"]"])
+        override fun `error incorrect type of content`(content: String) {
+            val messageId = MessageID.newBuilder().generate().build()
+            val message = ProtobufRawMessage.newBuilder().apply {
+                metadataBuilder.apply {
+                    id = messageId
+                    putAllProperties(PROPERTIES)
+                }
+                parentEventId = PROTOBUF_EVENT_ID
+                body = ByteString.copyFrom(generateContent(content), Charsets.UTF_8)
+            }.build()
+            val group = codec.decode(
+                ProtobufMessageGroup.newBuilder().apply {
+                    addMessagesBuilder().setRawMessage(message)
+                }.build(),
+                context
+            )
+
+            expectThat(group) {
+                get { messagesList }.and {
+                    hasSize(1)
+                    elementAt(0).and {
+                        get { hasMessage() }.isTrue()
+                        get { getMessage() }.and {
+                            get { parentEventId }.isSameInstanceAs(message.parentEventId)
+                            get { fieldsMap }.and {
+                                hasSize(1)
+                                get { get(ERROR_CONTENT_FIELD) }.isA<Value>().and {
+                                    get { hasSimpleValue() }.isTrue()
+                                    get { simpleValue }.isNotBlank()
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["\"\""])
+        override fun `skip incorrect type of result`(result: String) {
             val group = codec.decode(
                 ProtobufMessageGroup.newBuilder().apply {
                     addMessagesBuilder().rawMessageBuilder.apply {
                         metadataBuilder.apply {
                             idBuilder.generate()
                         }
-                        body = ByteString.copyFrom("""
-                        {
-                          "${config.contentKey}": [
-                            {
-                              "${config.resultKey}": $result
-                            }
-                          ]
-                        }
-                    """.trimIndent(), Charsets.UTF_8)
+                        body = ByteString.copyFrom(generateContentWithResult(result), Charsets.UTF_8)
                     }
                 }.build(),
                 context
@@ -222,6 +260,45 @@ class CodecHandTest {
 
             expectThat(group) {
                 get { messagesList }.isEmpty()
+            }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["[]", "{}"])
+        override fun `error incorrect type of result`(result: String) {
+            val messageId = MessageID.newBuilder().generate().build()
+            val message = ProtobufRawMessage.newBuilder().apply {
+                metadataBuilder.apply {
+                    id = messageId
+                    putAllProperties(PROPERTIES)
+                }
+                parentEventId = PROTOBUF_EVENT_ID
+                body = ByteString.copyFrom(generateContentWithResult(result), Charsets.UTF_8)
+            }.build()
+            val group = codec.decode(
+                ProtobufMessageGroup.newBuilder().apply {
+                    addMessagesBuilder().setRawMessage(message)
+                }.build(),
+                context
+            )
+
+            expectThat(group) {
+                get { messagesList }.and {
+                    hasSize(1)
+                    elementAt(0).and {
+                        get { hasMessage() }.isTrue()
+                        get { getMessage() }.and {
+                            get { parentEventId }.isSameInstanceAs(message.parentEventId)
+                            get { fieldsMap }.and {
+                                hasSize(1)
+                                get { get(ERROR_CONTENT_FIELD) }.isA<Value>().and {
+                                    get { hasSimpleValue() }.isTrue()
+                                    get { simpleValue }.isNotBlank()
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -297,7 +374,7 @@ class CodecHandTest {
                         get { body.toString(Charsets.UTF_8) }.isEqualTo("test-result")
                     }
                     elementAt(1).isA<ParsedMessage>().and {
-                        verifyMetadata(messageId, PROPERTIES, 2)
+                        verifyMetadata(messageId, DEFAULT_MESSAGE_TYPE, PROPERTIES, 2)
                         get { eventId }.isSameInstanceAs(message.eventId)
                         get { body }.and {
                             hasSize(1)
@@ -305,7 +382,7 @@ class CodecHandTest {
                         }
                     }
                     elementAt(2).isA<ParsedMessage>().and {
-                        verifyMetadata(messageId, PROPERTIES, 3)
+                        verifyMetadata(messageId, DEFAULT_MESSAGE_TYPE, PROPERTIES, 3)
                         get { eventId }.isSameInstanceAs(message.eventId)
                         get { body }.and {
                             hasSize(1)
@@ -313,7 +390,7 @@ class CodecHandTest {
                         }
                     }
                     elementAt(3).isA<ParsedMessage>().and {
-                        verifyMetadata(messageId, PROPERTIES, 4)
+                        verifyMetadata(messageId, DEFAULT_MESSAGE_TYPE, PROPERTIES, 4)
                         get { eventId }.isSameInstanceAs(message.eventId)
                         get { body }.and {
                             hasSize(1)
@@ -321,7 +398,7 @@ class CodecHandTest {
                         }
                     }
                     elementAt(4).isA<ParsedMessage>().and {
-                        verifyMetadata(messageId, PROPERTIES, 5)
+                        verifyMetadata(messageId, DEFAULT_MESSAGE_TYPE, PROPERTIES, 5)
                         get { eventId }.isSameInstanceAs(message.eventId)
                         get { body }.and {
                             hasSize(1)
@@ -333,17 +410,13 @@ class CodecHandTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = ["\"\"", "[]", "[\"\"]"])
-        override fun `incorrect type of content`(content: String) {
+        @ValueSource(strings = ["[]"])
+        override fun `skip incorrect type of content`(content: String) {
             val group = codec.decode(
                 TransportRawMessage.builder().apply {
                     idBuilder().generate()
                     setEventId(TRANSPORT_EVENT_ID)
-                    setBody("""
-                        {
-                          "${config.contentKey}": $content
-                        }
-                    """.trimIndent().toByteArray())
+                    setBody(generateContent(content).toByteArray())
                 }.build().toGroup(),
                 context
             )
@@ -354,27 +427,79 @@ class CodecHandTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = ["\"\"", "[]", "{}"])
-        override fun `incorrect type of result`(result: String) {
+        @ValueSource(strings = ["\"\"", "[\"\"]"])
+        override fun `error incorrect type of content`(content: String) {
+            val messageId = MessageId.builder().generate().build()
+            val message = TransportRawMessage.builder()
+                .setId(messageId)
+                .setMetadata(PROPERTIES)
+                .setEventId(TRANSPORT_EVENT_ID)
+                .setBody(generateContent(content).toByteArray())
+                .build()
+            val group = codec.decode(
+                message.toGroup(),
+                context
+            )
+
+            expectThat(group) {
+                get { messages }.and {
+                    hasSize(1)
+                    elementAt(0).isA<ParsedMessage>().and {
+                        verifyMetadata(messageId, ERROR_TYPE_MESSAGE, PROPERTIES, 1)
+                        get { eventId }.isSameInstanceAs(message.eventId)
+                        get { body }.and {
+                            hasSize(1)
+                            get { get(ERROR_CONTENT_FIELD) }.isA<String>().isNotBlank()
+                        }
+                    }
+                }
+            }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["\"\""])
+        override fun `skip incorrect type of result`(result: String) {
             val group = codec.decode(
                 TransportRawMessage.builder().apply {
                     idBuilder().generate()
                     setEventId(TRANSPORT_EVENT_ID)
-                    setBody("""
-                        {
-                          "${config.contentKey}": [
-                            {
-                              "${config.resultKey}": $result
-                            }
-                          ]
-                        }
-                    """.trimIndent().toByteArray())
+                    setBody(generateContentWithResult(result).toByteArray())
                 }.build().toGroup(),
                 context
             )
 
             expectThat(group) {
                 get { messages }.isEmpty()
+            }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["[]", "{}"])
+        override fun `error incorrect type of result`(result: String) {
+            val messageId = MessageId.builder().generate().build()
+            val message = TransportRawMessage.builder()
+                .setId(messageId)
+                .setMetadata(PROPERTIES)
+                .setEventId(TRANSPORT_EVENT_ID)
+                .setBody(generateContentWithResult(result).toByteArray())
+                .build()
+            val group = codec.decode(
+                message.toGroup(),
+                context
+            )
+
+            expectThat(group) {
+                get { messages }.and {
+                    hasSize(1)
+                    elementAt(0).isA<ParsedMessage>().and {
+                        verifyMetadata(messageId, ERROR_TYPE_MESSAGE, PROPERTIES, 1)
+                        get { eventId }.isSameInstanceAs(message.eventId)
+                        get { body }.and {
+                            hasSize(1)
+                            get { get(ERROR_CONTENT_FIELD) }.isA<String>().isNotBlank()
+                        }
+                    }
+                }
             }
         }
 
@@ -394,10 +519,11 @@ class CodecHandTest {
 
         private fun Assertion.Builder<ParsedMessage>.verifyMetadata(
             messageId: MessageId,
+            messageType: String,
             properties: Map<String, String>,
             subSeq: Int
         ) {
-            get { type }.isSameInstanceAs(DEFAULT_MESSAGE_TYPE)
+            get { type }.isSameInstanceAs(messageType)
             get { metadata }.isEqualTo(properties)
             get { id }.and {
                 get { sessionAlias }.isSameInstanceAs(messageId.sessionAlias)
@@ -414,6 +540,22 @@ class CodecHandTest {
             .addSubsequence(subSeq)
             .setTimestamp(Instant.now())
     }
+
+    private fun generateContentWithResult(result: String) = """
+                            {
+                              "${config.contentKey}": [
+                                {
+                                  "${config.resultKey}": $result
+                                }
+                              ]
+                            }
+                        """.trimIndent()
+
+    private fun generateContent(content: String) = """
+                            {
+                              "${config.contentKey}": $content
+                            }
+                        """.trimIndent()
 
     companion object {
         private const val BOOK = "test-book"
