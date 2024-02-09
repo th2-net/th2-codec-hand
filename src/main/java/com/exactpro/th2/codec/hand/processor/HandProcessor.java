@@ -23,12 +23,12 @@ import com.exactpro.th2.common.grpc.RawMessageMetadata;
 import com.exactpro.th2.common.grpc.Value;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -65,7 +65,7 @@ public class HandProcessor {
     public List<AnyMessage> process(RawMessage rawMessage, Integer subsequenceNumber) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         String body = new String(rawMessage.getBody().toByteArray());
-        Map<?, ?> jsonMap = objectMapper.readValue(body, HashMap.class);
+        Map<?, ?> jsonMap = objectMapper.readValue(body, LinkedHashMap.class);
 
         MessageID.Builder messageIdBuilder = this.getMessageIdBuilder(rawMessage);
         RawMessageMetadata.Builder rawMetaDataBuilder = this.getRawMetaDataBuilder(rawMessage);
