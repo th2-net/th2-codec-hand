@@ -16,7 +16,7 @@
 package com.exactpro.th2.codec.hand.processor
 
 import com.exactpro.th2.codec.hand.CodecHandSettings
-import com.exactpro.th2.codec.hand.processor.TransportHandProcessor.Companion.Context
+import com.exactpro.th2.codec.hand.processor.TransportHandProcessor.Context
 import com.exactpro.th2.codec.util.ERROR_CONTENT_FIELD
 import com.exactpro.th2.codec.util.ERROR_TYPE_MESSAGE
 import com.exactpro.th2.common.schema.message.impl.rabbitmq.transport.EventId
@@ -61,13 +61,11 @@ class TransportHandProcessor(
         setProtocol(context.protocol)
     }
 
-    companion object {
-        class Context(message: RawMessage) {
-            val id: MessageId = message.id
-            val metadata: Map<String, String> = message.metadata
-            val protocol: String = message.protocol
-            val eventId: EventId? = message.eventId
-        }
+    class Context(message: RawMessage) {
+        val id: MessageId = message.id
+        val metadata: Map<String, String> = message.metadata
+        val protocol: String = message.protocol
+        val eventId: EventId? = message.eventId
     }
 }
 

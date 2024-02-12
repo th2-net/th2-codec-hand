@@ -34,23 +34,23 @@ abstract class HandProcessor<M, C, R>(
 
         val context = rawMessage.createContext()
 
-        jsonMap.forEach loop1@ { (key, value) ->
+        for ((key, value) in jsonMap) {
             if (key == settings.contentKey) {
                 if (value !is List<*>) {
                     val text = "Expected value for '$key' is list but received: '${value.javaClass}'"
                     LOGGER.error(text)
                     onMessage(createError(context, subSequence, text))
-                    return@loop1
+                    continue
                 }
 
-                if (value.isEmpty()) return@loop1
+                if (value.isEmpty()) continue
 
-                value.forEach loop2@ { iterableValue ->
+                for (iterableValue in value) {
                     if (iterableValue !is Map<*, *>) {
                         val text = "Expected type of $iterableValue is map but received: ${iterableValue?.javaClass}"
                         LOGGER.error(text)
                         onMessage(createError(context, subSequence, text))
-                        return@loop2
+                        continue
                     }
 
                     val rawData: Any? = iterableValue[settings.resultKey]
@@ -58,9 +58,9 @@ abstract class HandProcessor<M, C, R>(
                         val text = "Expected type of $rawData is string but received: ${rawData?.javaClass}"
                         LOGGER.error(text)
                         onMessage(createError(context, subSequence, text))
-                        return@loop2
+                        continue
                     }
-                    if (rawData.isEmpty()) return@loop2
+                    if (rawData.isEmpty()) continue
 
                     onMessage(createRaw(context, subSequence, rawData))
                     subSequence += 1

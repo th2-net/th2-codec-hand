@@ -37,7 +37,6 @@ class CodecHandFactory : IPipelineCodecFactory {
 
     override fun init(pipelineCodecContext: IPipelineCodecContext) {}
     override fun init(dictionary: InputStream) {}
-    override fun close() {}
 
     companion object {
         val PROTOCOLS = setOf("hand")

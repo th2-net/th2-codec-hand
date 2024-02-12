@@ -16,7 +16,7 @@
 package com.exactpro.th2.codec.hand.processor
 
 import com.exactpro.th2.codec.hand.CodecHandSettings
-import com.exactpro.th2.codec.hand.processor.ProtobufHandProcessor.Companion.Context
+import com.exactpro.th2.codec.hand.processor.ProtobufHandProcessor.Context
 import com.exactpro.th2.codec.util.ERROR_CONTENT_FIELD
 import com.exactpro.th2.codec.util.ERROR_TYPE_MESSAGE
 import com.exactpro.th2.common.grpc.AnyMessage
@@ -79,27 +79,25 @@ class ProtobufHandProcessor(
 
     private fun convertToValue(value: Any): Value = value.toValue()
 
-    companion object {
-        class Context(message: RawMessage) {
-            val messageIdBuilder: MessageID.Builder = getMessageIdBuilder(message)
-            val rawMetaDataBuilder: RawMessageMetadata.Builder = getRawMetaDataBuilder(message)
-            val metaDataBuilder: MessageMetadata.Builder = getMetaDataBuilder(message)
-            val parentEventId: EventID? = if (message.hasParentEventId()) message.parentEventId else null
+    class Context(message: RawMessage) {
+        val messageIdBuilder: MessageID.Builder = getMessageIdBuilder(message)
+        val rawMetaDataBuilder: RawMessageMetadata.Builder = getRawMetaDataBuilder(message)
+        val metaDataBuilder: MessageMetadata.Builder = getMetaDataBuilder(message)
+        val parentEventId: EventID? = if (message.hasParentEventId()) message.parentEventId else null
 
-            private fun getMessageIdBuilder(rawMessage: RawMessage): MessageID.Builder {
-                return rawMessage.metadata.id.toBuilder()
-            }
+        private fun getMessageIdBuilder(rawMessage: RawMessage): MessageID.Builder {
+            return rawMessage.metadata.id.toBuilder()
+        }
 
-            private fun getMetaDataBuilder(rawMessage: RawMessage): MessageMetadata.Builder {
-                val metadata = rawMessage.metadata
-                return MessageMetadata.newBuilder()
-                    .setId(metadata.id.toBuilder().setTimestamp(metadata.id.timestamp).build())
-                    .putAllProperties(metadata.propertiesMap).setProtocol(metadata.protocol)
-            }
+        private fun getMetaDataBuilder(rawMessage: RawMessage): MessageMetadata.Builder {
+            val metadata = rawMessage.metadata
+            return MessageMetadata.newBuilder()
+                .putAllProperties(metadata.propertiesMap)
+                .setProtocol(metadata.protocol)
+        }
 
-            private fun getRawMetaDataBuilder(rawMessage: RawMessage): RawMessageMetadata.Builder {
-                return rawMessage.metadata.toBuilder()
-            }
+        private fun getRawMetaDataBuilder(rawMessage: RawMessage): RawMessageMetadata.Builder {
+            return rawMessage.metadata.toBuilder()
         }
     }
 }
