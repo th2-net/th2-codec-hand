@@ -31,10 +31,8 @@ class CodecHandFactory : IPipelineCodecFactory {
         get() = PROTOCOLS
 
     override fun create(settings: IPipelineCodecSettings?): IPipelineCodec {
-        if (settings is CodecHandSettings) {
-            return CodecHand(settings)
-        }
-        throw IllegalArgumentException("Unexpected setting type: " + (settings?.javaClass ?: "null"))
+        require(settings is CodecHandSettings) { "Unexpected setting type: ${settings?.javaClass}" }
+        return CodecHand(settings)
     }
 
     override fun init(pipelineCodecContext: IPipelineCodecContext) {}
